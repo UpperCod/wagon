@@ -6,7 +6,7 @@ export default {
   entry : 'index.js',
   dest  : 'build/index.js',
   format: 'umd',
-  moduleName  : 'wagon',
+  moduleName  : 'Wagon',
   plugins: [
     /*
     babel({
