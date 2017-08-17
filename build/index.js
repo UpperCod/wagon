@@ -98,18 +98,6 @@ var Store = (function (Dispatcher$$1) {
             }] )
         );
         /**
-         * Replaces the subscribe method, to maintain an execution
-         * On a direct basis on the subscriber, in this way
-         * The subscriber automatically resumes the state of the store
-         * At the moment of being whispered, as is usually done by a Observable
-         */
-        var subscribe  =  this.subscribe.bind(this);
-        this.subscribe   = function (callback,autorun){
-            if ( autorun === void 0 ) autorun = true;
-
-            subscribe( callback ); autorun && callback( currentState );
-        };
-        /**
          * Dispatches the initial action that defines the current state
          */
         this.dispatch({type:'@AUTORUN'});

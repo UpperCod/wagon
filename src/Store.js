@@ -38,16 +38,6 @@ export default class Store extends Dispatcher{
             }
         );
         /**
-         * Replaces the subscribe method, to maintain an execution
-         * On a direct basis on the subscriber, in this way
-         * The subscriber automatically resumes the state of the store
-         * At the moment of being whispered, as is usually done by a Observable
-         */
-        const subscribe  =  this.subscribe.bind(this);
-        this.subscribe   = (callback,autorun = true)=>{
-            subscribe( callback ); autorun && callback( currentState );
-        }
-        /**
          * Dispatches the initial action that defines the current state
          */
         this.dispatch({type:'@AUTORUN'});
