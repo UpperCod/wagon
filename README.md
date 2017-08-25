@@ -1,5 +1,11 @@
 # WAGON
 
+|tipo|peso|
+|----|----|
+|uncompres| 4.94 KB    |
+|compress | 1.79 KB    |
+|Gzip     | 793  bytes |
+
 Es una pequeña librería para el control del estado, inspirado en **redux** y **flux**, la principal diferencia es que wagon no despacha todas las acciones,
 despacha  si el estado anterior es distinto al actual, para exto simplemente compara de la siguiente forma los estados:
 
@@ -13,13 +19,6 @@ if( currentState !== nextState ){
 }
 ```
 De esta forma el **reducer** se ve obligado a generar un nuevo estado para notificar a los suscriptores.
-
-
-|tipo|peso|
-|----|----|
-|uncompres| 4.94 KB    |
-|compress | 1.79 KB    |
-|Gzip     | 793  bytes |
 
 ```javascript
 import {Store} from 'wagon'
