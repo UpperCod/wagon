@@ -72,68 +72,100 @@ Dispatcher.prototype.middleware = function middleware (){
 };
 
 var Store = (function (Dispatcher$$1) {
-    function Store(currentReducer,currentState,middleware){
+    function Store(ref){
         var this$1 = this;
-        if ( middleware === void 0 ) middleware=[];
+        var reducer = ref.reducer;
+        var state = ref.state;
+        var middleware = ref.middleware; if ( middleware === void 0 ) middleware = [];
 
         Dispatcher$$1.call(this);
         /**
          * Generates a private access context for the state
          */
-        this.getState = function (){ return currentState; };
+        this.getState = function (){ return state; };
         /**
          * It uses the middleware method of the Dispatcher, to generate a control of the state
          */
-        (ref = this).middleware.apply(
+        (ref$1 = this).middleware.apply(
             /**
              * Creates a new function for each middleware so that it resets the parameters in 
              * the following order store, next and action
              */
-            ref, middleware.map(function (middleware){ return function (next,action){ return middleware(this$1,next,action); }; }).concat( [function (next,action){
-                var nextState = currentReducer(currentState,action);   
-                if( nextState !== currentState ){
-                    next( currentState = nextState );
+            ref$1, [].concat(middleware).map(function (middleware){
+                if( typeof middleware === 'function' ){
+                    return function (next,action){ return middleware(this$1,next,action); }
+                }else{
+                    throw new Error('Expected the middleware to be a function');
+                }
+            }).concat( [function (next,action){
+                var nextState = this$1.reducer(state,action);   
+                if( this$1.compareState( state,nextState ) ){
+                    next( state = nextState );
                 }
                 return action;
             }] )
         );
         /**
-         * Dispatches the initial action that defines the current state
+         * 
          */
-        this.dispatch({type:'@AUTORUN'});
-        var ref;
+        this.setReducer(reducer);
+        var ref$1;
     }
 
     if ( Dispatcher$$1 ) Store.__proto__ = Dispatcher$$1;
     Store.prototype = Object.create( Dispatcher$$1 && Dispatcher$$1.prototype );
     Store.prototype.constructor = Store;
+    /**
+     * 
+     * @param {function} reducer 
+     */
+    Store.prototype.setReducer = function setReducer (callback){
+        if( typeof callback === 'function' ){
+            this.reducer = callback;
+            this.dispatch({type:'@AUTORUN'});
+        }else{
+            throw new Error('Expected the reducer to be a function');
+        }
+    };
+    /**
+     * 
+     * @param  {object} currentState 
+     * @param  {object} nextState 
+     * @return {boolean}
+     */
+    Store.prototype.compareState = function compareState (currentState,nextState){
+        return currentState !== nextState;
+    };
 
     return Store;
 }(Dispatcher));
 
-/**
- * 
- * @param {object}   object 
- * @param {function} callback 
- */
-function each(object,callback){
-    for(var key in object){ callback(object[key],key); }
-}
-
-function mapReducers(reducers){
+function mapReducer(reducers){
     if( typeof reducers === 'object' ){
         return function reduce(currentState,action){
             if ( currentState === void 0 ) currentState={};
 
             var update, nextState = {};
-            each(reducers,function (reduce,prop){
-                var before = currentState[prop],
-                    after  = reduce( before, action );
-                if(!update && before !== after){
+            
+            for(var prop in reducers ){
+
+                var reducer = reducers[prop],
+                    before  = currentState[prop],
+                    after = (void 0);
+
+                if( typeof reducer == 'function' ){
+                    after = reducer( before, action);
+                }else{
+                    after = reducer;
+                }
+
+                if( !update && before !== after ){
                     update = true;
                 }
+
                 nextState[ prop ] = after;
-            });
+            }
+            
             return update ? nextState : currentState;
         };
     }else{
@@ -143,7 +175,7 @@ function mapReducers(reducers){
 
 exports.Store = Store;
 exports.Dispatcher = Dispatcher;
-exports.mapReducers = mapReducers;
+exports.mapReducer = mapReducer;
 exports.createMiddleware = createMiddleware;
 
 Object.defineProperty(exports, '__esModule', { value: true });

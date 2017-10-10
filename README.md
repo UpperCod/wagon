@@ -2,97 +2,70 @@
 
 |tipo|peso|
 |----|----|
-|uncompres| 4.94 KB    |
-|compress | 1.79 KB    |
-|Gzip     | 793  bytes |
+|uncompress| 5.83 KB    |
+|compress | 2.14 KB    |
+|Gzip     | 866  bytes |
 
-Es una pequeña librería para el control del estado, inspirado en **redux** y **flux**, la principal diferencia es que wagon no despacha todas las acciones,
-despacha  si el estado anterior es distinto al actual, para exto simplemente compara de la siguiente forma los estados:
-
+Wagon es una pequeña librería para gestionar el estado inspirada en **Redux** y **Flux**, su principal diferencia es la notificación hacia los suscriptores, sea en base a una comparación primitiva, como manifiesta el siguiente codigo:
 
 ```javascript
 let currentState = {}, nextState = {};
 if( currentState !== nextState ){
-    /**
-    Notify subscribers
-    **/
+   /**
+   Notify subscribers
+   **/
 }
 ```
-De esta forma el **reducer** se ve obligado a generar un nuevo estado para notificar a los suscriptores.
+De esta forma el **reducer** se ve obligado a generar un nuevo estado para notificar cambios a los suscriptores.
+
+### Implementación
 
 ```javascript
 import {Store} from 'wagon'
 
-let initialState = {}
+let store = new Store({
+   state : 0,
+   reducer(state,action){
+       switch(action.type){
+           case 'INCREMENT':
+               return ++state;
+           case 'DECREMENT':
+               return --state;
+           default:
+               return state;
+       }
+   },
+   middleware({getState},next,action){
+       console.log('action: ', action );
+       console.log('before: ', getState());
+           let state = next(action);
+       console.log('after:  ', getState());
+       return state
+   }
+})
 
-function reducer(state,action){
-    console.log(state,action)
-}
+store.subscribe(( state )=>{
+   console.log('subscribe: ', state )
+})
 
-function middlewareLogger({getState,dispatch},next,action){
-    console.log('before: ', getState())
-                let state = next(action)
-    console.log('after:  ', getState())
-    return state
-}
-
-export new Store(reducer,initialState,[
-    middlewareLogger
-])
+store.dispatch({
+   type : 'INCREMENT'
+})
 
 ```
+### State (opcional)
 
-El core de wagon es simple, se compone basicamente de un clase llamada **Dispatcher**, esta ofrece la siguiente interfaz de control y no esta ligada al store solo a los suscriptores, adicionalmente una clase 
-**Store** que extiende al dispatcher y usa los middlewares para controlar el estado del store
+al instanciar el store ud puede entregarle un estado inicial.
 
-### Metodos del Dispatcher
+### reducer (requerido)
 
-esta clase permite crear un dispatch al momento de instanciarla o definir middlewares, los metodos de interacion que posee la instancia son
+debe ser una función, esta recibe 2 parametros el estado anterior y la acción de cambio, si está retorna el estado anterior no genera emisión hacia los suscriptores.
 
-* `middleware(...function)`: permite crear un nuevo **dispatch** en base a los parametros, estos debe ser funciones que resiviran como primer argumento next seguido del resto de parametros
+### middleware (opcional)
 
-* `subscribe(function)`   : permite añadir un suscriptor al dispatcher
+puede ser una función o una colección de funciones, cada función recibe 3 parámetros:
 
-* `unsubscribe(function)` : permite anular una suscripcion
+1. **store** :  recibe el store que invoca el middleware
+2. **next**  :  permite pasar al siguiente middleware o reducer, **next a su vez puede construir un nuevo action**.
+3. **action**:  parámetro para el reducer
 
-* `dispatch(...param)`    : permite despachar a los suscriptores argumentos
-
-### Store
-
-la clase Store simplemente extiende dispatcher y en la instancia se define de la siguiente forma
-
-``` javascript
-constructor(currentReducer,currentState,middleware=[]){
-    super();
-    /**
-    * Generates a private access context for the state
-    */
-    this.getState = ()=>currentState;
-    /**
-    * It uses the middleware method of the Dispatcher, to generate a control of the state
-    */
-    this.middleware(
-        /**
-        * Creates a new function for each middleware so that it resets the parameters in 
-        * the following order store, next and action
-        */
-        ...middleware.map(middleware=>(next,action)=>middleware(this,next,action)),
-        /**
-        * Execute the reducer and then compare if the next state is different from the
-        * previous one, to notify subscribers
-        */
-        (next,action)=>{
-            let nextState = currentReducer(currentState,action);   
-            if( nextState !== currentState ){
-                next( currentState = nextState );
-            }
-            return action;
-        }
-    );
-    /**
-    * Dispatches the initial action that defines the current state
-    */
-    this.dispatch({type:'@AUTORUN'});
-}
-```
-> como notara el core de Wagon es Distpatcher, que es simplemente una interpretacion de patron observer.

@@ -1,12 +1,12 @@
 
 import Store            from './src/Store'
 import Dispatcher       from './src/Dispatcher'
-import mapReducers      from './src/mapReducers'
+import mapReducer      from './src/mapReducer'
 import createMiddleware from './src/createMiddleware'
 
 export {
     Store,
     Dispatcher,
-    mapReducers,
+    mapReducer,
     createMiddleware,
 }

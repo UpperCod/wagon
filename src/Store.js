@@ -10,12 +10,16 @@ export default class Store extends Dispatcher{
      * @param {array}    middleware     - Array of functions that control execution
      * of the reducer, these functions receive as parameter the store, next and action
      */ 
-    constructor(currentReducer,currentState,middleware=[]){
+    constructor({
+        reducer,
+        state,
+        middleware = [],
+    }){
         super();
         /**
          * Generates a private access context for the state
          */
-        this.getState = ()=>currentState;
+        this.getState = ()=>state;
         /**
          * It uses the middleware method of the Dispatcher, to generate a control of the state
          */
@@ -24,22 +28,49 @@ export default class Store extends Dispatcher{
              * Creates a new function for each middleware so that it resets the parameters in 
              * the following order store, next and action
              */
-            ...middleware.map(middleware=>(next,action)=>middleware(this,next,action)),
+            ...[].concat(middleware).map(middleware=>{
+                if( typeof middleware === 'function' ){
+                    return (next,action)=>middleware(this,next,action)
+                }else{
+                    throw new Error('Expected the middleware to be a function');
+                }
+            }),
             /**
              * Execute the reducer and then compare if the next state is different from the
              * previous one, to notify subscribers
              */
             (next,action)=>{
-                let nextState = currentReducer(currentState,action);   
-                if( nextState !== currentState ){
-                    next( currentState = nextState );
+                let nextState = this.reducer(state,action);   
+                if( this.compareState( state,nextState ) ){
+                    next( state = nextState );
                 }
                 return action;
             }
         );
         /**
-         * Dispatches the initial action that defines the current state
+         * 
          */
-        this.dispatch({type:'@AUTORUN'});
+        this.setReducer(reducer);
+    }
+    /**
+     * 
+     * @param {function} reducer 
+     */
+    setReducer(callback){
+        if( typeof callback === 'function' ){
+            this.reducer = callback;
+            this.dispatch({type:'@AUTORUN'});
+        }else{
+            throw new Error('Expected the reducer to be a function');
+        }
+    }
+    /**
+     * 
+     * @param  {object} currentState 
+     * @param  {object} nextState 
+     * @return {boolean}
+     */
+    compareState(currentState,nextState){
+        return currentState !== nextState;
     }
 }
